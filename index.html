@@ -67,7 +67,7 @@
         /* --- Chart Layout --- */
         .chart-container {
             position: relative;
-            width: 80vw;
+            width: 90vw;
             max-width: 400px;
             aspect-ratio: 1 / 1;
             margin-bottom: 1rem;
@@ -90,6 +90,7 @@
             fill: none;
             stroke-linecap: round; /* Rounded ends for arcs */
             transition: stroke 0.3s ease-in-out; /* Smooth color transition */
+            cursor: pointer; /* Indicate interactivity */
         }
 
         .active-routine-arc {
@@ -162,9 +163,7 @@
         button {
             padding: 10px 15px;
             border: none;
-            width:80vw;
-            max-width:600px;
-            border-radius: 20px; /* Rounded corners */
+            border-radius: 6px; /* Rounded corners */
             font-family: var(--body-font);
             font-size: 1rem;
             cursor: pointer;
@@ -204,7 +203,7 @@
 
         /* --- Table Styles --- */
         .schedule-table-container {
-            width: 80vw;
+            width: 90vw;
             max-width: 600px;
             background-color: var(--header-bg);
             border-radius: 8px; /* Rounded corners */
@@ -369,6 +368,33 @@
             color: var(--text-color);
         }
 
+        /* --- Arc Info Tooltip Styles --- */
+        .arc-info-tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent dark background */
+            color: #FFFFFF;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            pointer-events: none; /* Allows clicks to pass through to elements behind it */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+            z-index: 100; /* Ensure it's above other elements */
+            white-space: nowrap; /* Prevent text wrapping */
+            transform: translate(-50%, -100%); /* Adjust for centering above cursor */
+        }
+
+        .arc-info-tooltip.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .arc-info-tooltip .info-label {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 600px) {
             body {
@@ -405,6 +431,11 @@
     <div class="chart-container">
         <!-- The SVG element where the chart will be drawn -->
         <svg id="schedule-chart" class="chart" viewBox="0 0 100 100"></svg>
+        <!-- Tooltip for displaying arc information -->
+        <div id="arc-info-tooltip" class="arc-info-tooltip">
+            <div class="info-label"></div>
+            <div class="info-time"></div>
+        </div>
     </div>
 
     <!-- Button to open the Add Activity modal -->
@@ -475,6 +506,7 @@
         let currentScheduleData = []; // This will hold the data fetched from local storage
         let notificationTimeouts = {}; // To store setTimeout IDs for notifications
         let activeRoutineBarInterval; // To store the interval ID for the active routine bar
+        let tooltipTimeout; // To manage hiding the tooltip after a delay
 
         // --- CONFIGURATION & DATA ---
         const svgNS = "http://www.w3.org/2000/svg";
@@ -506,6 +538,12 @@
         const saveButton = document.getElementById('save-button');
         const cancelEditButton = document.getElementById('cancel-edit-button');
         const formTitle = document.getElementById('form-title');
+
+        // Tooltip elements
+        const arcInfoTooltip = document.getElementById('arc-info-tooltip');
+        const infoLabel = arcInfoTooltip.querySelector('.info-label');
+        const infoTime = arcInfoTooltip.querySelector('.info-time');
+
 
         // --- HELPER FUNCTIONS ---
 
@@ -567,7 +605,7 @@
 
                 const endOption = document.createElement('option');
                 endOption.value = i;
-                endOption.textContent = i < 10 ? `0${i}` : i;
+                option.textContent = i < 10 ? `0${i}` : i;
                 endMinuteSelect.appendChild(endOption);
             }
         }
@@ -656,6 +694,13 @@
                 arc.setAttribute('stroke', item.color);
                 arc.setAttribute('stroke-width', strokeWidth);
                 arc.setAttribute('class', 'schedule-arc');
+                arc.setAttribute('data-id', item.id); // Store activity ID on the arc for lookup
+
+                // Add event listeners for tooltip
+                arc.addEventListener('mouseover', handleArcInteraction);
+                arc.addEventListener('mouseout', handleArcInteraction);
+                arc.addEventListener('click', handleArcInteraction);
+
                 svgChart.appendChild(arc);
             });
 
@@ -1051,6 +1096,48 @@
                 }
             });
             console.log("--- End Scheduling Notifications ---");
+        }
+
+        // --- Arc Info Tooltip Interaction ---
+        function handleArcInteraction(event) {
+            const activityId = event.target.dataset.id;
+            const activity = currentScheduleData.find(item => item.id === activityId);
+
+            if (!activity) return;
+
+            // Clear any pending hide actions to prevent flickering
+            clearTimeout(tooltipTimeout);
+
+            if (event.type === 'mouseover') {
+                showArcInfo(activity, event);
+            } else if (event.type === 'mouseout') {
+                // Delay hiding slightly in case mouse briefly leaves and re-enters
+                tooltipTimeout = setTimeout(hideArcInfo, 100);
+            } else if (event.type === 'click') {
+                showArcInfo(activity, event);
+                // For clicks, hide after a longer duration
+                tooltipTimeout = setTimeout(hideArcInfo, 3000);
+            }
+        }
+
+        function showArcInfo(activity, event) {
+            infoLabel.textContent = activity.label;
+            infoTime.textContent = `${formatTime(activity.startH, activity.startM)} - ${formatTime(activity.endH, activity.endM)}`;
+
+            // Position the tooltip relative to the chart container
+            const chartRect = svgChart.getBoundingClientRect();
+            // event.clientX/Y are relative to the viewport
+            // We want position relative to chart container for absolute positioning
+            const tooltipX = event.clientX - chartRect.left;
+            const tooltipY = event.clientY - chartRect.top;
+
+            arcInfoTooltip.style.left = `${tooltipX}px`;
+            arcInfoTooltip.style.top = `${tooltipY}px`;
+            arcInfoTooltip.classList.add('show');
+        }
+
+        function hideArcInfo() {
+            arcInfoTooltip.classList.remove('show');
         }
 
         // --- PWA Service Worker Registration ---
