@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Daily Rhythm App</title>
+    <!-- PWA: Web App Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <!-- PWA: Theme Color for browser UI (Dark theme) -->
+    <meta name="theme-color" content="#0d1117">
+
+    <!-- Importing a font for the title -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        /* --- Basic Setup (Dark Theme) --- */
+        :root {
+            --bg-color: #0d1117; /* Dark background */
+            --text-color: #e6edf3; /* Light text */
+            --base-circle-color: #21262d; /* Darker gray for background circle */
+            --body-font: 'Inter', sans-serif;
+            --border-color: #30363d; /* Medium dark gray for borders */
+            --header-bg: #161b22; /* Slightly lighter dark for table headers/card backgrounds */
+            --button-bg: #238636; /* Green for primary buttons */
+            --button-hover-bg: #2ea043;
+            --danger-bg: #da3633; /* Red for danger */
+            --danger-hover-bg: #f85149;
+            --input-bg: #010409; /* Very dark for inputs */
+            --input-border: #30363d; /* Dark gray for input borders */
+            --accent-color: #58a6ff; /* A clear blue for accents */
+            --card-bg: #161b22; /* Same as header-bg */
+            --active-routine-color: #FFD700; /* Gold for active routine highlight */
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--body-font);
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            flex-direction: column;
+            gap: 2rem;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-family: var(--body-font);
+            font-weight: 700;
+            font-size: 2rem;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        /* --- Chart Layout --- */
+        .chart-container {
+            position: relative;
+            width: 90vw;
+            max-width: 400px;
+            aspect-ratio: 1 / 1;
+            margin-bottom: 1rem;
+        }
+
+        svg.chart {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+            display: block;
+        }
+
+        /* --- SVG Element Styles --- */
+        .background-circle {
+            fill: none;
+            stroke: var(--base-circle-color);
+        }
+
+        .schedule-arc {
+            fill: none;
+            stroke-linecap: round; /* Rounded ends for arcs */
+            transition: stroke 0.3s ease-in-out; /* Smooth color transition */
+        }
+
+        .active-routine-arc {
+            fill: none;
+            stroke: var(--active-routine-color);
+            stroke-width: 8; /* Smaller stroke for active routine */
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.7)); /* Glow effect */
+        }
+
+        .hour-label {
+            font-size: 0.8em; /* Smaller font for hour labels */
+            fill: var(--text-color);
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+
+        /* --- Form Styles (now inside modal) --- */
+        .form-card { /* This style will apply to the modal content */
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px; /* Rounded corners */
+            padding: 20px;
+            width: 90vw;
+            max-width: 500px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            text-align: left;
+            position: relative;
+        }
+
+        .form-card h2 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            color: var(--accent-color);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .form-group input[type="text"],
+        .form-group select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 6px; /* Rounded corners */
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-family: var(--body-font);
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .time-inputs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .time-inputs select {
+            flex: 1;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 1.5rem;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px; /* Rounded corners */
+            font-family: var(--body-font);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        button.primary {
+            background-color: var(--button-bg);
+            color: #FFFFFF; /* White text for green button */
+        }
+
+        button.primary:hover {
+            background-color: var(--button-hover-bg);
+            transform: translateY(-1px);
+        }
+
+        button.secondary {
+            background-color: var(--border-color); /* Use border color for secondary */
+            color: var(--text-color);
+        }
+
+        button.secondary:hover {
+            background-color: #444c56;
+            transform: translateY(-1px);
+        }
+
+        button.danger {
+            background-color: var(--danger-bg);
+            color: #FFFFFF; /* White text for red button */
+        }
+
+        button.danger:hover {
+            background-color: var(--danger-hover-bg);
+            transform: translateY(-1px);
+        }
+
+        /* --- Table Styles --- */
+        .schedule-table-container {
+            width: 90vw;
+            max-width: 600px;
+            background-color: var(--header-bg);
+            border-radius: 8px; /* Rounded corners */
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: var(--header-bg);
+            color: var(--text-color);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:nth-child(odd) {
+            background-color: #010409; /* Slightly darker for odd rows */
+        }
+
+        tbody tr:hover {
+            background-color: #21262d; /* Hover effect */
+            cursor: default;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .table-actions button {
+            padding: 6px 10px;
+            font-size: 0.85rem;
+        }
+
+        /* --- Notification Section --- */
+        .notification-section {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px; /* Rounded corners */
+            padding: 20px;
+            width: 90vw;
+            max-width: 500px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            text-align: left;
+            margin-bottom: 2rem;
+        }
+
+        .notification-section h2 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: var(--accent-color);
+        }
+
+        .notification-status {
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            color: #8b949e; /* Lighter gray for status text */
+        }
+
+        .notification-status strong {
+            color: var(--text-color);
+        }
+
+        .message-box {
+            background-color: #21262d; /* Dark gray for message box */
+            border: 1px solid #444c56;
+            border-radius: 6px; /* Rounded corners */
+            padding: 10px;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #c9d1d9;
+            text-align: center;
+            display: none; /* Hidden by default */
+        }
+
+        .message-box.show {
+            display: block;
+        }
+
+        /* --- Modal Styles --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .modal-overlay.show {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px; /* Rounded corners */
+            padding: 20px;
+            width: 90vw;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            position: relative;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-close-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+            font-size: 1.8rem;
+            color: #8b949e; /* Lighter gray for close button */
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.2s ease-in-out;
+        }
+
+        .modal-close-button:hover {
+            color: var(--text-color);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
+            .form-card, .schedule-table-container, .notification-section, .modal-content {
+                padding: 15px;
+            }
+            th, td {
+                padding: 10px;
+            }
+            .time-inputs {
+                flex-direction: column;
+            }
+            .time-inputs select {
+                width: 100%;
+            }
+            .button-group {
+                flex-direction: column;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>My Daily Rhythm App</h1>
+
+    <div class="chart-container">
+        <!-- The SVG element where the chart will be drawn -->
+        <svg id="schedule-chart" class="chart" viewBox="0 0 100 100"></svg>
+    </div>
+
+    <!-- Button to open the Add Activity modal -->
+    <button type="button" class="primary" id="add-activity-button">
+        <i class="fas fa-plus-circle"></i> Add New Activity
+    </button>
+
+    <div class="schedule-table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Activity</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="schedule-table-body">
+                <!-- Table rows will be inserted here by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="notification-section">
+        <h2>Notifications</h2>
+        <p class="notification-status">Notification permission: <strong id="notification-permission-status">Not requested</strong></p>
+        <button type="button" class="primary" id="request-notification-permission">Request Notification Permission</button>
+        <div id="message-box" class="message-box"></div>
+    </div>
+
+    <!-- The Modal Structure -->
+    <div id="activity-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close-button" id="modal-close-button">&times;</button>
+            <h2 id="form-title">Add New Activity</h2>
+            <form id="activity-form">
+                <input type="hidden" id="activity-id">
+                <div class="form-group">
+                    <label for="activity-label">Activity Label:</label>
+                    <input type="text" id="activity-label" placeholder="e.g., Work, Sleep, Gym" required>
+                </div>
+                <div class="form-group">
+                    <label>Start Time:</label>
+                    <div class="time-inputs">
+                        <select id="start-hour" required></select>
+                        <select id="start-minute" required></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>End Time:</label>
+                    <div class="time-inputs">
+                        <select id="end-hour" required></select>
+                        <select id="end-minute" required></select>
+                    </div>
+                </div>
+                <!-- Removed color input from here -->
+                <div class="button-group">
+                    <button type="submit" class="primary" id="save-button">Add Activity</button>
+                    <button type="button" class="secondary" id="cancel-edit-button">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- GLOBAL VARIABLES ---
+        const LOCAL_STORAGE_KEY = 'dailyRhythmSchedule'; // Key for local storage
+        let currentScheduleData = []; // This will hold the data fetched from local storage
+        let notificationTimeouts = {}; // To store setTimeout IDs for notifications
+        let activeRoutineBarInterval; // To store the interval ID for the active routine bar
+
+        // --- CONFIGURATION & DATA ---
+        const svgNS = "http://www.w3.org/2000/svg";
+        const cx = 50;
+        const cy = 50;
+        const radius = 45;
+        const strokeWidth = 10;
+        const activeBarStrokeWidth = 8; // Smaller stroke for active routine
+        const hourLabelRadiusOffset = 8; // Distance of hour labels from the main circle
+
+        // --- DOM ELEMENTS ---
+        const svgChart = document.getElementById('schedule-chart');
+        const addActivityButton = document.getElementById('add-activity-button');
+        const scheduleTableBody = document.getElementById('schedule-table-body');
+        const notificationPermissionStatus = document.getElementById('notification-permission-status');
+        const requestNotificationPermissionButton = document.getElementById('request-notification-permission');
+        const messageBox = document.getElementById('message-box');
+
+        // Modal specific elements
+        const activityModal = document.getElementById('activity-modal');
+        const modalCloseButton = document.getElementById('modal-close-button');
+        const activityForm = document.getElementById('activity-form');
+        const activityIdInput = document.getElementById('activity-id');
+        const activityLabelInput = document.getElementById('activity-label');
+        const startHourSelect = document.getElementById('start-hour');
+        const startMinuteSelect = document.getElementById('start-minute');
+        const endHourSelect = document.getElementById('end-hour');
+        const endMinuteSelect = document.getElementById('end-minute');
+        const saveButton = document.getElementById('save-button');
+        const cancelEditButton = document.getElementById('cancel-edit-button');
+        const formTitle = document.getElementById('form-title');
+
+        // --- HELPER FUNCTIONS ---
+
+        /**
+         * Generates a unique ID for new activities.
+         * @returns {string} A unique ID string.
+         */
+        function generateUniqueId() {
+            return Date.now().toString(36) + Math.random().toString(36).substring(2);
+        }
+
+        /**
+         * Generates a random light color in HSL format.
+         * Lightness (L) is between 70% and 90%.
+         * Saturation (S) is between 50% and 100%.
+         * @returns {string} HSL color string (e.g., "hsl(120, 80%, 75%)").
+         */
+        function getRandomLightColor() {
+            const hue = Math.floor(Math.random() * 360); // 0-359
+            const saturation = Math.floor(Math.random() * 50) + 50; // 50-100%
+            const lightness = Math.floor(Math.random() * 20) + 70; // 70-90%
+            return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        }
+
+        /**
+         * Displays a temporary message in the message box.
+         * @param {string} message - The message to display.
+         * @param {number} duration - Duration in milliseconds to show the message.
+         */
+        function showMessage(message, duration = 3000) {
+            messageBox.textContent = message;
+            messageBox.classList.add('show');
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, duration);
+        }
+
+        /**
+         * Populates hour and minute select dropdowns.
+         */
+        function populateTimeSelects() {
+            for (let i = 0; i < 24; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i < 10 ? `0${i}` : i;
+                startHourSelect.appendChild(option);
+
+                const endOption = document.createElement('option');
+                endOption.value = i;
+                endOption.textContent = i < 10 ? `0${i}` : i;
+                endHourSelect.appendChild(endOption);
+            }
+
+            for (let i = 0; i < 60; i += 5) { // Minutes in 5-minute increments
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i < 10 ? `0${i}` : i;
+                startMinuteSelect.appendChild(option);
+
+                const endOption = document.createElement('option');
+                endOption.value = i;
+                endOption.textContent = i < 10 ? `0${i}` : i;
+                endMinuteSelect.appendChild(endOption);
+            }
+        }
+
+        /**
+         * Converts polar coordinates to Cartesian coordinates.
+         * @param {number} centerX - X-coordinate of the center.
+         * @param {number} centerY - Y-coordinate of the center.
+         * @param {number} r - Radius of the circle.
+         * @param {number} angleInDegrees - Angle in degrees (0 at right, increases clockwise).
+         * @returns {{x: number, y: number}} Cartesian coordinates.
+         */
+        function polarToCartesian(centerX, centerY, r, angleInDegrees) {
+            const angleInRadians = (angleInDegrees) * Math.PI / 180.0;
+            return {
+                x: centerX + (r * Math.cos(angleInRadians)),
+                y: centerY + (r * Math.sin(angleInRadians))
+            };
+        }
+
+        /**
+         * Generates an SVG path string for an arc.
+         * @param {number} x - X-coordinate of the center.
+         * @param {number} y - Y-coordinate of the center.
+         * @param {number} r - Radius of the arc.
+         * @param {number} startAngle - Start angle in degrees.
+         * @param {number} endAngle - End angle in degrees.
+         * @returns {string} SVG path data for the arc.
+         */
+        function describeArc(x, y, r, startAngle, endAngle) {
+            if (endAngle < startAngle) {
+                endAngle += 360;
+            }
+            const start = polarToCartesian(x, y, r, startAngle);
+            const end = polarToCartesian(x, y, r, endAngle);
+            const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+            return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
+        }
+
+        /**
+         * Converts a time (hour, minute) to an angle in degrees for a 24-hour circle.
+         * 00:00 (midnight) maps to 0 degrees (top).
+         * @param {number} h - Hour (0-23).
+         * @param {number} m - Minute (0-59).
+         * @returns {number} Angle in degrees (0-360).
+         */
+        function timeToAngle(h, m) {
+            const totalMinutesInDay = 24 * 60;
+            const timeInMinutes = h * 60 + m;
+            return (timeInMinutes / totalMinutesInDay) * 360;
+        }
+
+        /**
+         * Formats a 24-hour time to a 12-hour string (e.g., "05:00 AM", "09:30 PM").
+         * @param {number} h - Hour (0-23).
+         * @param {number} m - Minute (0-59).
+         * @returns {string} Formatted time string.
+         */
+        function formatTime(h, m) {
+            const period = h >= 12 ? 'PM' : 'AM';
+            const hour12 = h % 12 === 0 ? 12 : h % 12;
+            const minutes = m < 10 ? '0' + m : m;
+            return `${hour12}:${minutes} ${period}`;
+        }
+
+        // --- DRAWING CHART FUNCTION ---
+        function drawChart() {
+            svgChart.innerHTML = ''; // Clear any previous drawings
+
+            // Draw Background Circle
+            const backgroundCircle = document.createElementNS(svgNS, 'circle');
+            backgroundCircle.setAttribute('cx', cx);
+            backgroundCircle.setAttribute('cy', cy);
+            backgroundCircle.setAttribute('r', radius);
+            backgroundCircle.setAttribute('class', 'background-circle');
+            backgroundCircle.setAttribute('stroke-width', strokeWidth);
+            svgChart.appendChild(backgroundCircle);
+
+            // Draw Schedule Arcs
+            currentScheduleData.forEach((item) => {
+                const startAngle = timeToAngle(item.startH, item.startM);
+                const endAngle = timeToAngle(item.endH, item.endM);
+
+                const arc = document.createElementNS(svgNS, 'path');
+                arc.setAttribute('d', describeArc(cx, cy, radius, startAngle, endAngle));
+                arc.setAttribute('stroke', item.color);
+                arc.setAttribute('stroke-width', strokeWidth);
+                arc.setAttribute('class', 'schedule-arc');
+                svgChart.appendChild(arc);
+            });
+
+            // Add Hour Labels around the circle
+            for (let i = 0; i < 24; i++) {
+                const hourAngle = timeToAngle(i, 0);
+                // Position the text slightly outside the main circle
+                const textPosition = polarToCartesian(cx, cy, radius + hourLabelRadiusOffset, hourAngle);
+
+                const hourText = document.createElementNS(svgNS, 'text');
+                hourText.setAttribute('x', textPosition.x);
+                hourText.setAttribute('y', textPosition.y);
+                hourText.setAttribute('class', 'hour-label');
+                // Rotate the text to be upright
+                hourText.setAttribute('transform', `rotate(${hourAngle + 90}, ${textPosition.x}, ${textPosition.y})`);
+                hourText.textContent = `${i}h`; // e.g., "0h", "12h"
+                svgChart.appendChild(hourText);
+            }
+
+            // Add the active routine bar placeholder
+            const activeBar = document.createElementNS(svgNS, 'path');
+            activeBar.setAttribute('id', 'active-routine-bar');
+            activeBar.setAttribute('class', 'active-routine-arc');
+            activeBar.setAttribute('stroke-width', activeBarStrokeWidth); // Set stroke width here
+            svgChart.appendChild(activeBar);
+
+            // Start updating the active routine bar
+            if (activeRoutineBarInterval) {
+                clearInterval(activeRoutineBarInterval);
+            }
+            activeRoutineBarInterval = setInterval(updateActiveRoutineBar, 10000); // Update every 10 seconds
+            updateActiveRoutineBar(); // Call immediately to draw it
+        }
+
+        /**
+         * Updates the active routine bar on the chart based on current time.
+         */
+        function updateActiveRoutineBar() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+            const activeBar = document.getElementById('active-routine-bar');
+            if (!activeBar) return;
+
+            // Find the current active routine (logic remains the same)
+            let activeRoutine = null;
+            for (const activity of currentScheduleData) {
+                const startMinutes = activity.startH * 60 + activity.startM;
+                let endMinutes = activity.endH * 60 + activity.endM;
+
+                if (endMinutes <= startMinutes) { // Overnight routine
+                    endMinutes += (24 * 60);
+                    let adjustedCurrentTime = currentTimeInMinutes;
+                    if (currentTimeInMinutes < startMinutes) {
+                        adjustedCurrentTime += (24 * 60);
+                    }
+                    if (adjustedCurrentTime >= startMinutes && adjustedCurrentTime < endMinutes) {
+                        activeRoutine = activity;
+                        break;
+                    }
+                } else if (currentTimeInMinutes >= startMinutes && currentTimeInMinutes < endMinutes) {
+                    activeRoutine = activity;
+                    break;
+                }
+            }
+
+            if (activeRoutine) {
+                const currentAngle = timeToAngle(currentHour, currentMinute);
+                const barLength = 0.2; // Even smaller arc length for the bar (e.g., 0.2 degrees)
+                const barStartAngle = currentAngle - barLength / 2;
+                const barEndAngle = currentAngle + barLength / 2;
+
+                activeBar.setAttribute('d', describeArc(cx, cy, radius, barStartAngle, barEndAngle));
+                activeBar.style.display = 'block'; // Ensure it's visible
+            } else {
+                activeBar.style.display = 'none'; // Hide if no active routine
+            }
+        }
+
+
+        // --- CREATE SCHEDULE TABLE FUNCTION ---
+        function createScheduleTable() {
+            scheduleTableBody.innerHTML = ''; // Clear existing rows
+
+            currentScheduleData.forEach(item => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-id', item.id); // Store unique ID
+
+                const activityCell = document.createElement('td');
+                activityCell.textContent = item.label;
+                row.appendChild(activityCell);
+
+                const startTimeCell = document.createElement('td');
+                startTimeCell.textContent = formatTime(item.startH, item.startM);
+                row.appendChild(startTimeCell);
+
+                const endTimeCell = document.createElement('td');
+                endTimeCell.textContent = formatTime(item.endH, item.endM);
+                row.appendChild(endTimeCell);
+
+                const actionsCell = document.createElement('td');
+                actionsCell.classList.add('table-actions');
+
+                const editButton = document.createElement('button');
+                editButton.innerHTML = '<i class="fas fa-edit"></i>'; // Edit icon
+                editButton.classList.add('secondary');
+                editButton.title = 'Edit Activity';
+                editButton.onclick = () => editActivity(item);
+                actionsCell.appendChild(editButton);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>'; // Delete icon
+                deleteButton.classList.add('danger');
+                deleteButton.title = 'Delete Activity';
+                deleteButton.onclick = () => deleteActivity(item.id);
+                actionsCell.appendChild(deleteButton);
+
+                row.appendChild(actionsCell);
+                scheduleTableBody.appendChild(row);
+            });
+        }
+
+        // --- LOCAL STORAGE OPERATIONS ---
+
+        /**
+         * Loads schedule data from local storage.
+         * @returns {Array} Parsed schedule data or an empty array if not found.
+         */
+        function loadScheduleFromLocalStorage() {
+            try {
+                const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+                return storedData ? JSON.parse(storedData) : [];
+            } catch (error) {
+                console.error("Error loading from local storage:", error);
+                showMessage("Error loading schedule from local storage.");
+                return [];
+            }
+        }
+
+        /**
+         * Saves current schedule data to local storage.
+         * @param {Array} data - The schedule data array to save.
+         */
+        function saveScheduleToLocalStorage(data) {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+                console.log("Schedule saved to local storage.");
+            } catch (error) {
+                console.error("Error saving to local storage:", error);
+                showMessage("Error saving schedule to local storage.");
+            }
+        }
+
+        /**
+         * Updates the UI (chart and table) and saves data to local storage.
+         */
+        function updateUIAndSave() {
+            drawChart();
+            createScheduleTable();
+            saveScheduleToLocalStorage(currentScheduleData);
+            scheduleNotifications(currentScheduleData); // Reschedule notifications
+        }
+
+        // --- FORM & MODAL MANAGEMENT ---
+
+        /**
+         * Shows the activity modal.
+         */
+        function showModal() {
+            activityModal.classList.add('show');
+        }
+
+        /**
+         * Hides the activity modal and resets the form.
+         */
+        function hideModal() {
+            activityModal.classList.remove('show');
+            resetForm();
+        }
+
+        /**
+         * Resets the activity form to its default state.
+         */
+        function resetForm() {
+            activityIdInput.value = '';
+            activityLabelInput.value = '';
+            startHourSelect.value = '0';
+            startMinuteSelect.value = '0';
+            endHourSelect.value = '0';
+            endMinuteSelect.value = '0';
+            saveButton.textContent = 'Add Activity';
+            formTitle.textContent = 'Add New Activity';
+        }
+
+        /**
+         * Pre-fills the form with activity data for editing and shows the modal.
+         * @param {Object} item - The activity object to edit.
+         */
+        function editActivity(item) {
+            activityIdInput.value = item.id;
+            activityLabelInput.value = item.label;
+            startHourSelect.value = item.startH;
+            startMinuteSelect.value = item.startM;
+            endHourSelect.value = item.endH;
+            endMinuteSelect.value = item.endM;
+
+            saveButton.textContent = 'Update Activity';
+            formTitle.textContent = 'Edit Activity';
+            showModal();
+        }
+
+        // Event listener for the "Add New Activity" button
+        addActivityButton.addEventListener('click', () => {
+            resetForm(); // Ensure form is clean for new entry
+            showModal();
+        });
+
+        // Event listener for the modal close button
+        modalCloseButton.addEventListener('click', hideModal);
+
+        // Event listener for the "Cancel" button inside the modal
+        cancelEditButton.addEventListener('click', hideModal);
+
+        // Event listener for form submission (Add/Update)
+        activityForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const id = activityIdInput.value || generateUniqueId(); // Generate new ID if not editing
+            const label = activityLabelInput.value.trim();
+            const startH = parseInt(startHourSelect.value);
+            const startM = parseInt(startMinuteSelect.value);
+            const endH = parseInt(endHourSelect.value);
+            const endM = parseInt(endMinuteSelect.value);
+            const color = currentScheduleData.find(item => item.id === id)?.color || getRandomLightColor(); // Retain existing color or get new random
+
+            if (!label) {
+                showMessage("Activity label cannot be empty.");
+                return;
+            }
+
+            const newActivity = {
+                id,
+                label,
+                startH,
+                startM,
+                endH,
+                endM,
+                color,
+            };
+
+            const existingIndex = currentScheduleData.findIndex(item => item.id === id);
+
+            if (existingIndex > -1) {
+                // Update existing activity
+                currentScheduleData[existingIndex] = newActivity;
+                showMessage("Activity updated successfully!");
+            } else {
+                // Add new activity
+                currentScheduleData.push(newActivity);
+                showMessage("Activity added successfully!");
+            }
+
+            // Sort activities by start time for consistent display
+            currentScheduleData.sort((a, b) => {
+                const aMinutes = a.startH * 60 + a.startM;
+                const bMinutes = b.startH * 60 + b.startM;
+                return aMinutes - bMinutes;
+            });
+
+            updateUIAndSave(); // Update chart, table, and save to local storage
+            hideModal(); // Close the modal
+        });
+
+        /**
+         * Deletes an activity from the schedule.
+         * @param {string} id - The ID of the activity to delete.
+         */
+        function deleteActivity(id) {
+            if (!confirm('Are you sure you want to delete this activity?')) {
+                return;
+            }
+            currentScheduleData = currentScheduleData.filter(item => item.id !== id);
+            updateUIAndSave();
+            showMessage("Activity deleted successfully!");
+        }
+
+        // --- NOTIFICATION LOGIC ---
+
+        /**
+         * Checks and updates the notification permission status in the UI.
+         */
+        function checkNotificationPermission() {
+            if (!('Notification' in window)) {
+                notificationPermissionStatus.textContent = 'Notifications not supported by your browser.';
+                requestNotificationPermissionButton.disabled = true;
+                return;
+            }
+            notificationPermissionStatus.textContent = Notification.permission;
+            if (Notification.permission === 'granted') {
+                requestNotificationPermissionButton.disabled = true;
+                requestNotificationPermissionButton.textContent = 'Permission Granted';
+            } else if (Notification.permission === 'denied') {
+                requestNotificationPermissionButton.disabled = true;
+                requestNotificationPermissionButton.textContent = 'Permission Denied';
+            } else {
+                requestNotificationPermissionButton.disabled = false;
+                requestNotificationPermissionButton.textContent = 'Request Notification Permission';
+            }
+        }
+
+        /**
+         * Requests notification permission from the user.
+         */
+        requestNotificationPermissionButton.addEventListener('click', async () => {
+            if (!('Notification' in window)) {
+                showMessage('Your browser does not support notifications.');
+                return;
+            }
+
+            try {
+                const permission = await Notification.requestPermission();
+                checkNotificationPermission(); // Update UI after request
+                if (permission === 'granted') {
+                    showMessage('Notification permission granted!');
+                    scheduleNotifications(currentScheduleData); // Schedule notifications immediately
+                } else {
+                    showMessage('Notification permission denied.');
+                }
+            } catch (error) {
+                console.error("Error requesting notification permission:", error);
+                showMessage('Error requesting notification permission.');
+            }
+        });
+
+        /**
+         * Schedules notifications for upcoming activities.
+         * Clears previously scheduled notifications to avoid duplicates.
+         * @param {Array<Object>} activities - The list of schedule activities.
+         */
+        function scheduleNotifications(activities) {
+            console.log("--- Scheduling Notifications ---");
+            console.log("Current Notification Permission:", Notification.permission);
+
+            // Clear all existing notification timeouts
+            for (const id in notificationTimeouts) {
+                clearTimeout(notificationTimeouts[id]);
+                console.log(`Cleared existing timeout for activity ID: ${id}`);
+            }
+            notificationTimeouts = {};
+
+            if (Notification.permission !== 'granted') {
+                console.warn("Notification permission not granted. Cannot schedule notifications.");
+                return;
+            }
+
+            const now = new Date();
+            console.log("Current Time (now):", now.toLocaleString());
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Midnight today
+
+            activities.forEach(activity => {
+                // Calculate activity start time for today
+                let activityStartTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), activity.startH, activity.startM, 0);
+
+                console.log(`Processing activity: "${activity.label}" (ID: ${activity.id})`);
+                console.log(`  Original scheduled start for today: ${activityStartTime.toLocaleString()}`);
+
+                // Adjust activityStartTime if it's in the past relative to 'now'
+                // This logic ensures notifications are scheduled for the *next* occurrence.
+                // If the activity's start time for today has already passed, schedule it for tomorrow.
+                if (activityStartTime < now) {
+                    activityStartTime.setDate(activityStartTime.getDate() + 1);
+                    console.log(`  Adjusted to tomorrow: ${activityStartTime.toLocaleString()}`);
+                }
+
+                const timeUntilNotification = activityStartTime.getTime() - now.getTime();
+                console.log(`  Time until activity start (ms): ${timeUntilNotification}`);
+
+                // Schedule notification 1 minute (60,000 ms) before the activity starts
+                const notificationTriggerTime = timeUntilNotification - (1 * 60 * 1000);
+                console.log(`  Time until notification trigger (ms): ${notificationTriggerTime}`);
+
+                if (notificationTriggerTime > 0) { // Only schedule if time is in the future
+                    const timeoutId = setTimeout(() => {
+                        // Check permission again before showing notification, as it might have been revoked
+                        if (Notification.permission === 'granted') {
+                            new Notification(`Upcoming: ${activity.label}`, {
+                                body: `Your activity "${activity.label}" starts at ${formatTime(activity.startH, activity.startM)}!`,
+                                icon: 'https://placehold.co/64x64/000000/FFFFFF?text=🔔' // Simple bell icon
+                            });
+                            console.log(`Notification fired for: "${activity.label}"`);
+                        } else {
+                            console.warn(`Notification for "${activity.label}" not shown: permission revoked.`);
+                        }
+                        // Remove from timeouts after it fires
+                        delete notificationTimeouts[activity.id];
+                    }, notificationTriggerTime);
+                    notificationTimeouts[activity.id] = timeoutId;
+                    console.log(`  Successfully scheduled notification for "${activity.label}". Timeout ID: ${timeoutId}`);
+                } else {
+                    console.log(`  Notification not scheduled for "${activity.label}" because trigger time is not in the future.`);
+                }
+            });
+            console.log("--- End Scheduling Notifications ---");
+        }
+
+        // --- PWA Service Worker Registration ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', function () {
+            populateTimeSelects();
+            currentScheduleData = loadScheduleFromLocalStorage(); // Load data on startup
+            updateUIAndSave(); // Draw initial chart/table and save (in case it was empty)
+            checkNotificationPermission(); // Check notification permission status
+        });
+    </script>
+
+</body>
+</html>
+
