@@ -653,20 +653,7 @@
             });
 
             // Add Hour Labels around the circle
-            for (let i = 0; i < 24; i++) {
-                const hourAngle = timeToAngle(i, 0);
-                // Position the text slightly outside the main circle
-                const textPosition = polarToCartesian(cx, cy, radius + hourLabelRadiusOffset, hourAngle);
-
-                const hourText = document.createElementNS(svgNS, 'text');
-                hourText.setAttribute('x', textPosition.x);
-                hourText.setAttribute('y', textPosition.y);
-                hourText.setAttribute('class', 'hour-label');
-                // Rotate the text to be upright
-                hourText.setAttribute('transform', `rotate(${hourAngle + 90}, ${textPosition.x}, ${textPosition.y})`);
-                hourText.textContent = `${i}h`; // e.g., "0h", "12h"
-                svgChart.appendChild(hourText);
-            }
+            
 
             // Add the active routine bar placeholder
             const activeBar = document.createElementNS(svgNS, 'path');
