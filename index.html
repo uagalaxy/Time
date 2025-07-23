@@ -7,7 +7,7 @@
     <!-- PWA: Web App Manifest -->
     <link rel="manifest" href="/manifest.json">
     <!-- PWA: Theme Color for browser UI (Dark theme) -->
-    <meta name="theme-color" content="#0d1117">
+    <meta name="theme-color" content="#000000">
 
     <!-- Importing a font for the title -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,17 +19,21 @@
     <style>
         /* --- Basic Setup (Dark Theme) --- */
         :root {
-            --bg-color: #0d1117; /* Dark background */
-            --text-color: #e6edf3; /* Light text */
+            --bg-color: #000000; /* Pure black background */
+            --text-color: #FFFFFF; /* Pure white text */
             --base-circle-color: #21262d; /* Darker gray for background circle */
             --body-font: 'Inter', sans-serif;
             --border-color: #30363d; /* Medium dark gray for borders */
             --header-bg: #161b22; /* Slightly lighter dark for table headers/card backgrounds */
-            --button-bg: #238636; /* Green for primary buttons */
-            --button-hover-bg: #2ea043;
+            --button-bg-primary: #FFFFFF; /* Pure white for primary buttons */
+            --button-text-primary: #000000; /* Pure black text for primary buttons */
+            --button-hover-bg-primary: #E0E0E0; /* Light gray for primary button hover */
+            --button-bg-secondary: #30363d; /* Dark gray for secondary buttons */
+            --button-text-secondary: #FFFFFF; /* White text for secondary buttons */
+            --button-hover-bg-secondary: #444c56;
             --danger-bg: #da3633; /* Red for danger */
             --danger-hover-bg: #f85149;
-            --input-bg: #010409; /* Very dark for inputs */
+            --input-bg: #000000; /* Pure black for inputs */
             --input-border: #30363d; /* Dark gray for input borders */
             --accent-color: #58a6ff; /* A clear blue for accents */
             --card-bg: #161b22; /* Same as header-bg */
@@ -95,14 +99,6 @@
             stroke-linecap: round;
             filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.7)); /* Glow effect */
         }
-
-        .hour-label {
-            font-size: 0.8em; /* Smaller font for hour labels */
-            fill: var(--text-color);
-            text-anchor: middle;
-            dominant-baseline: middle;
-        }
-
 
         /* --- Form Styles (now inside modal) --- */
         .form-card { /* This style will apply to the modal content */
@@ -171,27 +167,26 @@
             font-size: 1rem;
             cursor: pointer;
             transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
-            color: var(--text-color);
             font-weight: 500;
         }
 
         button.primary {
-            background-color: var(--button-bg);
-            color: #FFFFFF; /* White text for green button */
+            background-color: var(--button-bg-primary);
+            color: var(--button-text-primary);
         }
 
         button.primary:hover {
-            background-color: var(--button-hover-bg);
+            background-color: var(--button-hover-bg-primary);
             transform: translateY(-1px);
         }
 
         button.secondary {
-            background-color: var(--border-color); /* Use border color for secondary */
-            color: var(--text-color);
+            background-color: var(--button-bg-secondary);
+            color: var(--button-text-secondary);
         }
 
         button.secondary:hover {
-            background-color: #444c56;
+            background-color: var(--button-hover-bg-secondary);
             transform: translateY(-1px);
         }
 
@@ -240,7 +235,7 @@
         }
 
         tbody tr:nth-child(odd) {
-            background-color: #010409; /* Slightly darker for odd rows */
+            background-color: #000000; /* Pure black for odd rows */
         }
 
         tbody tr:hover {
@@ -270,6 +265,16 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             text-align: left;
             margin-bottom: 2rem;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .notification-section.hidden {
+            opacity: 0;
+            visibility: hidden;
+            height: 0; /* Collapse height when hidden */
+            padding: 0;
+            margin: 0;
+            border: none;
         }
 
         .notification-section h2 {
@@ -421,7 +426,7 @@
         </table>
     </div>
 
-    <div class="notification-section">
+    <div class="notification-section" id="notification-section">
         <h2>Notifications</h2>
         <p class="notification-status">Notification permission: <strong id="notification-permission-status">Not requested</strong></p>
         <button type="button" class="primary" id="request-notification-permission">Request Notification Permission</button>
@@ -476,7 +481,6 @@
         const radius = 45;
         const strokeWidth = 10;
         const activeBarStrokeWidth = 8; // Smaller stroke for active routine
-        const hourLabelRadiusOffset = 8; // Distance of hour labels from the main circle
 
         // --- DOM ELEMENTS ---
         const svgChart = document.getElementById('schedule-chart');
@@ -485,6 +489,7 @@
         const notificationPermissionStatus = document.getElementById('notification-permission-status');
         const requestNotificationPermissionButton = document.getElementById('request-notification-permission');
         const messageBox = document.getElementById('message-box');
+        const notificationSection = document.getElementById('notification-section'); // Get the notification section element
 
         // Modal specific elements
         const activityModal = document.getElementById('activity-modal');
@@ -651,9 +656,6 @@
                 arc.setAttribute('class', 'schedule-arc');
                 svgChart.appendChild(arc);
             });
-
-            // Add Hour Labels around the circle
-            
 
             // Add the active routine bar placeholder
             const activeBar = document.createElementNS(svgNS, 'path');
@@ -871,7 +873,9 @@
             const startM = parseInt(startMinuteSelect.value);
             const endH = parseInt(endHourSelect.value);
             const endM = parseInt(endMinuteSelect.value);
-            const color = currentScheduleData.find(item => item.id === id)?.color || getRandomLightColor(); // Retain existing color or get new random
+            // Get color: if editing, use existing color; if new, use random light color
+            const existingActivity = currentScheduleData.find(item => item.id === id);
+            const color = existingActivity ? existingActivity.color : getRandomLightColor();
 
             if (!label) {
                 showMessage("Activity label cannot be empty.");
@@ -933,18 +937,22 @@
             if (!('Notification' in window)) {
                 notificationPermissionStatus.textContent = 'Notifications not supported by your browser.';
                 requestNotificationPermissionButton.disabled = true;
+                notificationSection.classList.add('hidden'); // Hide if not supported
                 return;
             }
             notificationPermissionStatus.textContent = Notification.permission;
             if (Notification.permission === 'granted') {
                 requestNotificationPermissionButton.disabled = true;
                 requestNotificationPermissionButton.textContent = 'Permission Granted';
+                notificationSection.classList.add('hidden'); // Hide if granted
             } else if (Notification.permission === 'denied') {
                 requestNotificationPermissionButton.disabled = true;
                 requestNotificationPermissionButton.textContent = 'Permission Denied';
+                notificationSection.classList.remove('hidden'); // Show if denied, but button disabled
             } else {
                 requestNotificationPermissionButton.disabled = false;
                 requestNotificationPermissionButton.textContent = 'Request Notification Permission';
+                notificationSection.classList.remove('hidden'); // Show if not requested
             }
         }
 
