@@ -1,0 +1,42 @@
+{
+  "name": "My Daily Rhythm",
+  "short_name": "Daily Rhythm",
+  "description": "Organize your daily schedule with ease.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "icons": [
+    {
+      "src": "https://placehold.co/48x48/000000/FFFFFF?text=DR",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "https://placehold.co/72x72/000000/FFFFFF?text=DR",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "https://placehold.co/96x96/000000/FFFFFF?text=DR",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "https://placehold.co/144x144/000000/FFFFFF?text=DR",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "https://placehold.co/192x192/000000/FFFFFF?text=DR",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://placehold.co/512x512/000000/FFFFFF?text=DR",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
