@@ -36,8 +36,11 @@
             --input-bg: #000000; /* Pure black for inputs */
             --input-border: #30363d; /* Dark gray for input borders */
             --accent-color: #58a6ff; /* A clear blue for accents */
-            --card-bg: rgba(0,0,0,0.2); /* Same as header-bg */
+            --card-bg: rgba(0,0,0,0.2); /* Semi-transparent black for cards */
             --active-routine-color: #FFD700; /* Gold for active routine highlight */
+            --tab-bar-bg: rgba(255, 255, 255, 0.1); /* Semi-transparent white for tab bar */
+            --tab-button-active-bg: #FFFFFF; /* White for active tab */
+            --tab-button-active-text: #000000; /* Black text for active tab */
         }
 
         body {
@@ -50,6 +53,7 @@
             min-height: 100vh;
             margin: 0;
             padding: 20px;
+            padding-bottom: 80px; /* Space for floating tab bar */
             text-align: center;
             flex-direction: column;
             gap: 2rem;
@@ -64,13 +68,21 @@
             margin-bottom: 0.5rem;
         }
 
+        /* --- Header for Date/Day --- */
+        .date-day-header {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #8b949e; /* Lighter gray for status text */
+            margin-bottom: 1rem;
+        }
+
         /* --- Chart Layout --- */
         .chart-container {
             position: relative;
             width: 80vw;
             max-width: 400px;
             aspect-ratio: 1 / 1;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
 
         svg.chart {
@@ -90,7 +102,7 @@
             fill: none;
             stroke-linecap: round; /* Rounded ends for arcs */
             transition: stroke 0.3s ease-in-out; /* Smooth color transition */
-            /* Indicate interactivity */
+            cursor: pointer; /* Indicate interactivity */
         }
 
         .active-routine-arc {
@@ -100,6 +112,26 @@
             stroke-linecap: round;
             filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.7)); /* Glow effect */
         }
+
+        /* --- Center Active Activity Label --- */
+        .center-activity-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Counter-rotate to keep text upright */
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--active-routine-color); /* Gold color for active label */
+            text-align: center;
+            max-width: 80%; /* Prevent overflow */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 5px;
+            border-radius: 5px;
+            background-color: rgba(0, 0, 0, 0.5); /* Slightly transparent background for readability */
+        }
+
 
         /* --- Form Styles (now inside modal) --- */
         .form-card { /* This style will apply to the modal content */
@@ -133,7 +165,8 @@
         }
 
         .form-group input[type="text"],
-        .form-group select {
+        .form-group select,
+        .form-group input[type="date"] { /* Added date input */
             width: calc(100% - 20px);
             padding: 10px;
             border: 1px solid var(--input-border);
@@ -166,10 +199,11 @@
             border-radius: 20px; /* Rounded corners */
             font-family: var(--body-font);
             font-size: 1rem;
-            cursor: pointer;
+            
             transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
             font-weight: 500;
-            width:100px;        }
+            flex: 1; /* Allow buttons to grow and shrink */
+        }
 
         button.primary {
             background-color: var(--button-bg-primary);
@@ -206,10 +240,11 @@
             width: 80vw;
             max-width: 600px;
             background-color: var(--header-bg);
+            border: 1px solid var(--border-color); /* Added border to table container */
             border-radius: 20px; /* Rounded corners */
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            margin-bottom: 2rem;
+            margin-bottom: 0.3rem;
         }
 
         table {
@@ -338,7 +373,7 @@
             backdrop-filter:blur(8px);
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 8px; /* Rounded corners */
+            border-radius: 20px; /* Rounded corners for modal */
             padding: 20px;
             width: 80vw;
             max-width: 500px;
@@ -373,8 +408,8 @@
         /* --- Arc Info Tooltip Styles --- */
         .arc-info-tooltip {
             position: absolute;
-            background-color: rgba(250, 250, 250, 0.4); /* Semi-transparent dark background */
-            color: #000000;
+            background-color: rgba(250, 250, 250, 0.4); /* Semi-transparent light background */
+            color: #000000; /* Black text for light background */
             backdrop-filter: blur(13px);
             padding: 8px 12px;
             border-radius: 20px;
@@ -398,10 +433,69 @@
             margin-bottom: 4px;
         }
 
+        /* --- Tab Bar Styles --- */
+        .tab-bar-container {
+            position: fixed;
+            bottom: 10px; /* Adjusted to 10px from bottom */
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            background-color: var(--tab-bar-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 50px; /* Pill shape */
+            padding: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            z-index: 999; /* Ensure it's above most content but below modals */
+            gap: 10px;
+            width: 90vw;
+            max-width: 350px; /* Limit width on larger screens */
+            justify-content: space-around;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 40px; /* Pill shape for individual buttons */
+            font-size: 1rem;
+            font-weight: 600;
+            
+            transition: background-color 0.3s ease, color 0.3s ease;
+            background-color: transparent;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-button.active {
+            background-color: var(--tab-button-active-bg);
+            color: var(--tab-button-active-text);
+        }
+
+        .tab-button:hover:not(.active) {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* --- Content Sections --- */
+        .content-section {
+            width: 100%;
+            display: none; /* Hidden by default */
+            flex-direction: column; /* Ensure content stacks vertically */
+            align-items: center; /* Center content within section */
+            gap: 2rem;
+        }
+
+        .content-section.active {
+            display: flex; /* Show active section */
+        }
+
         /* Responsive adjustments */
         @media (max-width: 600px) {
             body {
                 padding: 10px;
+                padding-bottom: 80px; /* Adjust for mobile tab bar */
             }
             h1 {
                 font-size: 1.5rem;
@@ -422,7 +516,16 @@
                 flex-direction: column;
             }
             button {
-                width: 100%;
+                width: 100%; /* Full width for buttons on small screens */
+            }
+            .tab-bar-container {
+                width: calc(100% - 40px); /* Account for body padding */
+                bottom: 10px; /* Closer to bottom on mobile */
+                padding: 8px;
+            }
+            .tab-button {
+                padding: 10px 12px;
+                font-size: 0.9rem;
             }
         }
     </style>
@@ -430,46 +533,96 @@
 <body>
 
     <h1>My Daily Rhythm App</h1>
+    <div id="date-day-header" class="date-day-header"></div>
 
-    <div class="chart-container">
-        <!-- The SVG element where the chart will be drawn -->
-        <svg id="schedule-chart" class="chart" viewBox="0 0 100 100"></svg>
-        <!-- Tooltip for displaying arc information -->
-        <div id="arc-info-tooltip" class="arc-info-tooltip">
-            <div class="info-label"></div>
-            <div class="info-time"></div>
+    <div id="activity-section" class="content-section active">
+        <div class="chart-container">
+            <!-- The SVG element where the chart will be drawn -->
+            <svg id="schedule-chart" class="chart" viewBox="0 0 100 100"></svg>
+            <!-- Label for active activity in the center -->
+            <div id="center-activity-label" class="center-activity-label">No Active Routine</div>
+            <!-- Tooltip for displaying arc information -->
+            <div id="arc-info-tooltip" class="arc-info-tooltip">
+                <div class="info-label"></div>
+                <div class="info-time"></div>
+            </div>
+        </div>
+        <div class="schedule-table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Activity</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="schedule-table-body">
+                    <!-- Table rows will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+<!-- Button to open the Add Activity modal -->
+        <button type="button" class="primary" id="add-activity-button" style="max-width:200px">
+            <i class="fas fa-plus-circle"></i> Add New Activity
+        </button>
+        <div class="notification-section" id="notification-section">
+            <h2>Notifications</h2>
+            <p class="notification-status">Notification permission: <strong id="notification-permission-status">Not requested</strong></p>
+            <button type="button" class="primary" id="request-notification-permission">Request Notification Permission</button>
+            <div id="message-box" class="message-box"></div>
         </div>
     </div>
 
-  
+    <div id="reminder-section" class="content-section">
+        <!-- Moved Reminder List to Top -->
+        <div class="schedule-table-container">
+            <h2>Your Reminders</h2>
+            <table style="margin-top: 1rem;">
+                <thead>
+                    <tr>
+                        <th>Reminder</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="reminder-table-body">
+                    <!-- Reminder rows will be inserted here by JavaScript -->
+                    <tr><td colspan="4" style="text-align: center; color: #8b949e;">No reminders yet.</td></tr>
+                </tbody>
+            </table>
+        </div>
 
-    <div class="schedule-table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Activity</th>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="schedule-table-body">
-                <!-- Table rows will be inserted here by JavaScript -->
-            </tbody>
-        </table>
-    </div>
-  <!-- Button to open the Add Activity modal -->
-    <button type="button" class="primary" id="add-activity-button" style="max-width:200px">
-        <i class="fas fa-plus-circle"></i> Add New Activity
-    </button>
-    <div class="notification-section" id="notification-section">
-        <h2>Notifications</h2>
-        <p class="notification-status">Notification permission: <strong id="notification-permission-status">Not requested</strong></p>
-        <button type="button" class="primary" id="request-notification-permission">Request Notification Permission</button>
-        <div id="message-box" class="message-box"></div>
+        <!-- Moved Add New Reminder Form to Down -->
+        <div class="form-card" style="margin-bottom: 2rem;">
+            <h2>Add New Reminder</h2>
+            <form id="reminder-form">
+                <input type="hidden" id="reminder-id">
+                <div class="form-group">
+                    <label for="reminder-text">Reminder:</label>
+                    <input type="text" id="reminder-text" placeholder="e.g., Call Mom, Pay Bills" required>
+                </div>
+                <div class="form-group">
+                    <label for="reminder-date">Date:</label>
+                    <input type="date" id="reminder-date" required>
+                </div>
+                <div class="form-group">
+                    <label>Time:</label>
+                    <div class="time-inputs">
+                        <select id="reminder-hour" required></select>
+                        <select id="reminder-minute" required></select>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button type="submit" class="primary" id="save-reminder-button">Add Reminder</button>
+                    <button type="button" class="secondary" id="cancel-reminder-button">Cancel</button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <!-- The Modal Structure -->
+    <!-- The Modal Structure (remains for activity add/edit) -->
     <div id="activity-modal" class="modal-overlay">
         <div class="modal-content">
             <button class="modal-close-button" id="modal-close-button">&times;</button>
@@ -494,7 +647,6 @@
                         <select id="end-minute" required></select>
                     </div>
                 </div>
-                <!-- Removed color input from here -->
                 <div class="button-group">
                     <button type="submit" class="primary" id="save-button">Add Activity</button>
                     <button type="button" class="secondary" id="cancel-edit-button">Cancel</button>
@@ -503,11 +655,24 @@
         </div>
     </div>
 
+    <!-- Floating Tab Bar -->
+    <div class="tab-bar-container">
+        <button id="activity-tab-btn" class="tab-button active">
+            <i class="fas fa-chart-pie"></i> Routine
+        </button>
+        <button id="reminder-tab-btn" class="tab-button">
+            <i class="fas fa-bell"></i> Reminder
+        </button>
+    </div>
+
     <script type="module">
         // --- GLOBAL VARIABLES ---
-        const LOCAL_STORAGE_KEY = 'dailyRhythmSchedule'; // Key for local storage
-        let currentScheduleData = []; // This will hold the data fetched from local storage
-        let notificationTimeouts = {}; // To store setTimeout IDs for notifications
+        const LOCAL_STORAGE_KEY_SCHEDULE = 'dailyRhythmSchedule'; // Key for routine schedule
+        const LOCAL_STORAGE_KEY_REMINDERS = 'dailyRhythmReminders'; // Key for reminders
+        let currentScheduleData = []; // This will hold the routine data
+        let currentReminderData = []; // This will hold the reminder data
+        let notificationTimeouts = {}; // To store setTimeout IDs for routine notifications
+        let reminderNotificationTimeouts = {}; // To store setTimeout IDs for reminder notifications
         let activeRoutineBarInterval; // To store the interval ID for the active routine bar
         let tooltipTimeout; // To manage hiding the tooltip after a delay
 
@@ -520,15 +685,17 @@
         const activeBarStrokeWidth = 8; // Smaller stroke for active routine
 
         // --- DOM ELEMENTS ---
+        const dateDayHeader = document.getElementById('date-day-header');
         const svgChart = document.getElementById('schedule-chart');
+        const centerActivityLabel = document.getElementById('center-activity-label');
         const addActivityButton = document.getElementById('add-activity-button');
         const scheduleTableBody = document.getElementById('schedule-table-body');
         const notificationPermissionStatus = document.getElementById('notification-permission-status');
         const requestNotificationPermissionButton = document.getElementById('request-notification-permission');
         const messageBox = document.getElementById('message-box');
-        const notificationSection = document.getElementById('notification-section'); // Get the notification section element
+        const notificationSection = document.getElementById('notification-section');
 
-        // Modal specific elements
+        // Modal specific elements (for Activity)
         const activityModal = document.getElementById('activity-modal');
         const modalCloseButton = document.getElementById('modal-close-button');
         const activityForm = document.getElementById('activity-form');
@@ -547,11 +714,28 @@
         const infoLabel = arcInfoTooltip.querySelector('.info-label');
         const infoTime = arcInfoTooltip.querySelector('.info-time');
 
+        // Tab Bar elements
+        const activityTabBtn = document.getElementById('activity-tab-btn');
+        const reminderTabBtn = document.getElementById('reminder-tab-btn');
+        const activitySection = document.getElementById('activity-section');
+        const reminderSection = document.getElementById('reminder-section');
+
+        // Reminder specific elements
+        const reminderForm = document.getElementById('reminder-form');
+        const reminderIdInput = document.getElementById('reminder-id');
+        const reminderTextInput = document.getElementById('reminder-text');
+        const reminderDateInput = document.getElementById('reminder-date');
+        const reminderHourSelect = document.getElementById('reminder-hour');
+        const reminderMinuteSelect = document.getElementById('reminder-minute');
+        const saveReminderButton = document.getElementById('save-reminder-button');
+        const cancelReminderButton = document.getElementById('cancel-reminder-button');
+        const reminderTableBody = document.getElementById('reminder-table-body');
+
 
         // --- HELPER FUNCTIONS ---
 
         /**
-         * Generates a unique ID for new activities.
+         * Generates a unique ID for new activities/reminders.
          * @returns {string} A unique ID string.
          */
         function generateUniqueId() {
@@ -560,14 +744,14 @@
 
         /**
          * Generates a random light color in HSL format.
-         * Lightness (L) is between 70% and 90%.
+         * Lightness (L) is between 60% and 80%.
          * Saturation (S) is between 50% and 100%.
          * @returns {string} HSL color string (e.g., "hsl(120, 80%, 75%)").
          */
         function getRandomLightColor() {
             const hue = Math.floor(Math.random() * 360); // 0-359
             const saturation = Math.floor(Math.random() * 50) + 50; // 50-100%
-            const lightness = Math.floor(Math.random() * 20) + 60; // 70-90%
+            const lightness = Math.floor(Math.random() * 20) + 60; // 60-80% for better contrast on dark BG
             return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
         }
 
@@ -585,9 +769,10 @@
         }
 
         /**
-         * Populates hour and minute select dropdowns.
+         * Populates hour and minute select dropdowns for both activities and reminders.
          */
         function populateTimeSelects() {
+            // For Activity form
             for (let i = 0; i < 24; i++) {
                 const option = document.createElement('option');
                 option.value = i;
@@ -608,8 +793,22 @@
 
                 const endOption = document.createElement('option');
                 endOption.value = i;
-                option.textContent = i < 10 ? `0${i}` : i;
+                endOption.textContent = i < 10 ? `0${i}` : i;
                 endMinuteSelect.appendChild(endOption);
+            }
+
+            // For Reminder form
+            for (let i = 0; i < 24; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i < 10 ? `0${i}` : i;
+                reminderHourSelect.appendChild(option);
+            }
+            for (let i = 0; i < 60; i += 5) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i < 10 ? `0${i}` : i;
+                reminderMinuteSelect.appendChild(option);
             }
         }
 
@@ -674,6 +873,15 @@
             return `${hour12}:${minutes} ${period}`;
         }
 
+        /**
+         * Updates the header with today's date and day.
+         */
+        function updateDateHeader() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            dateDayHeader.textContent = now.toLocaleDateString('en-US', options);
+        }
+
         // --- DRAWING CHART FUNCTION ---
         function drawChart() {
             svgChart.innerHTML = ''; // Clear any previous drawings
@@ -724,6 +932,7 @@
 
         /**
          * Updates the active routine bar on the chart based on current time.
+         * Also updates the center activity label.
          */
         function updateActiveRoutineBar() {
             const now = new Date();
@@ -734,7 +943,7 @@
             const activeBar = document.getElementById('active-routine-bar');
             if (!activeBar) return;
 
-            // Find the current active routine (logic remains the same)
+            // Find the current active routine
             let activeRoutine = null;
             for (const activity of currentScheduleData) {
                 const startMinutes = activity.startH * 60 + activity.startM;
@@ -764,8 +973,10 @@
 
                 activeBar.setAttribute('d', describeArc(cx, cy, radius, barStartAngle, barEndAngle));
                 activeBar.style.display = 'block'; // Ensure it's visible
+                centerActivityLabel.textContent = activeRoutine.label; // Update center label
             } else {
                 activeBar.style.display = 'none'; // Hide if no active routine
+                centerActivityLabel.textContent = "No Active Routine"; // Reset center label
             }
         }
 
@@ -773,6 +984,13 @@
         // --- CREATE SCHEDULE TABLE FUNCTION ---
         function createScheduleTable() {
             scheduleTableBody.innerHTML = ''; // Clear existing rows
+
+            if (currentScheduleData.length === 0) {
+                const noDataRow = document.createElement('tr');
+                noDataRow.innerHTML = `<td colspan="4" style="text-align: center; color: #8b949e;">No activities yet. Add some to get started!</td>`;
+                scheduleTableBody.appendChild(noDataRow);
+                return;
+            }
 
             currentScheduleData.forEach(item => {
                 const row = document.createElement('tr');
@@ -820,10 +1038,10 @@
          */
         function loadScheduleFromLocalStorage() {
             try {
-                const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+                const storedData = localStorage.getItem(LOCAL_STORAGE_KEY_SCHEDULE);
                 return storedData ? JSON.parse(storedData) : [];
             } catch (error) {
-                console.error("Error loading from local storage:", error);
+                console.error("Error loading schedule from local storage:", error);
                 showMessage("Error loading schedule from local storage.");
                 return [];
             }
@@ -835,11 +1053,40 @@
          */
         function saveScheduleToLocalStorage(data) {
             try {
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+                localStorage.setItem(LOCAL_STORAGE_KEY_SCHEDULE, JSON.stringify(data));
                 console.log("Schedule saved to local storage.");
             } catch (error) {
                 console.error("Error saving to local storage:", error);
                 showMessage("Error saving schedule to local storage.");
+            }
+        }
+
+        /**
+         * Loads reminder data from local storage.
+         * @returns {Array} Parsed reminder data or an empty array if not found.
+         */
+        function loadRemindersFromLocalStorage() {
+            try {
+                const storedData = localStorage.getItem(LOCAL_STORAGE_KEY_REMINDERS);
+                return storedData ? JSON.parse(storedData) : [];
+            } catch (error) {
+                console.error("Error loading reminders from local storage:", error);
+                showMessage("Error loading reminders from local storage.");
+                return [];
+            }
+        }
+
+        /**
+         * Saves current reminder data to local storage.
+         * @param {Array} data - The reminder data array to save.
+         */
+        function saveRemindersToLocalStorage(data) {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY_REMINDERS, JSON.stringify(data));
+                console.log("Reminders saved to local storage.");
+            } catch (error) {
+                console.error("Error saving reminders to local storage:", error);
+                showMessage("Error saving reminders to local storage.");
             }
         }
 
@@ -849,11 +1096,14 @@
         function updateUIAndSave() {
             drawChart();
             createScheduleTable();
+            createReminderTable(); // Update reminder table too
             saveScheduleToLocalStorage(currentScheduleData);
-            scheduleNotifications(currentScheduleData); // Reschedule notifications
+            saveRemindersToLocalStorage(currentReminderData);
+            scheduleNotifications(currentScheduleData); // Reschedule routine notifications
+            scheduleReminderNotifications(currentReminderData); // Reschedule reminder notifications
         }
 
-        // --- FORM & MODAL MANAGEMENT ---
+        // --- FORM & MODAL MANAGEMENT (Activity) ---
 
         /**
          * Shows the activity modal.
@@ -867,13 +1117,13 @@
          */
         function hideModal() {
             activityModal.classList.remove('show');
-            resetForm();
+            resetActivityForm();
         }
 
         /**
          * Resets the activity form to its default state.
          */
-        function resetForm() {
+        function resetActivityForm() {
             activityIdInput.value = '';
             activityLabelInput.value = '';
             startHourSelect.value = '0';
@@ -903,7 +1153,7 @@
 
         // Event listener for the "Add New Activity" button
         addActivityButton.addEventListener('click', () => {
-            resetForm(); // Ensure form is clean for new entry
+            resetActivityForm(); // Ensure form is clean for new entry
             showModal();
         });
 
@@ -913,7 +1163,7 @@
         // Event listener for the "Cancel" button inside the modal
         cancelEditButton.addEventListener('click', hideModal);
 
-        // Event listener for form submission (Add/Update)
+        // Event listener for activity form submission (Add/Update)
         activityForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
@@ -978,7 +1228,7 @@
             showMessage("Activity deleted successfully!");
         }
 
-        // --- NOTIFICATION LOGIC ---
+        // --- NOTIFICATION LOGIC (Shared) ---
 
         /**
          * Checks and updates the notification permission status in the UI.
@@ -1020,7 +1270,8 @@
                 checkNotificationPermission(); // Update UI after request
                 if (permission === 'granted') {
                     showMessage('Notification permission granted!');
-                    scheduleNotifications(currentScheduleData); // Schedule notifications immediately
+                    scheduleNotifications(currentScheduleData); // Schedule routine notifications immediately
+                    scheduleReminderNotifications(currentReminderData); // Schedule reminder notifications immediately
                 } else {
                     showMessage('Notification permission denied.');
                 }
@@ -1032,74 +1283,102 @@
 
         /**
          * Schedules notifications for upcoming activities.
-         * Clears previously scheduled notifications to avoid duplicates.
+         * Clears previously scheduled routine notifications to avoid duplicates.
          * @param {Array<Object>} activities - The list of schedule activities.
          */
         function scheduleNotifications(activities) {
-            console.log("--- Scheduling Notifications ---");
-            console.log("Current Notification Permission:", Notification.permission);
-
-            // Clear all existing notification timeouts
+            console.log("--- Scheduling Routine Notifications ---");
+            // Clear all existing routine notification timeouts
             for (const id in notificationTimeouts) {
                 clearTimeout(notificationTimeouts[id]);
-                console.log(`Cleared existing timeout for activity ID: ${id}`);
             }
             notificationTimeouts = {};
 
             if (Notification.permission !== 'granted') {
-                console.warn("Notification permission not granted. Cannot schedule notifications.");
+                console.warn("Routine notifications not scheduled: permission not granted.");
                 return;
             }
 
             const now = new Date();
-            console.log("Current Time (now):", now.toLocaleString());
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Midnight today
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
             activities.forEach(activity => {
-                // Calculate activity start time for today
                 let activityStartTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), activity.startH, activity.startM, 0);
-
-                console.log(`Processing activity: "${activity.label}" (ID: ${activity.id})`);
-                console.log(`  Original scheduled start for today: ${activityStartTime.toLocaleString()}`);
-
-                // Adjust activityStartTime if it's in the past relative to 'now'
-                // This logic ensures notifications are scheduled for the *next* occurrence.
-                // If the activity's start time for today has already passed, schedule it for tomorrow.
                 if (activityStartTime < now) {
-                    activityStartTime.setDate(activityStartTime.getDate() + 1);
-                    console.log(`  Adjusted to tomorrow: ${activityStartTime.toLocaleString()}`);
+                    activityStartTime.setDate(activityStartTime.getDate() + 1); // Schedule for tomorrow if in past
                 }
 
                 const timeUntilNotification = activityStartTime.getTime() - now.getTime();
-                console.log(`  Time until activity start (ms): ${timeUntilNotification}`);
+                const notificationTriggerTime = timeUntilNotification - (1 * 60 * 1000); // 1 minute before
 
-                // Schedule notification 1 minute (60,000 ms) before the activity starts
-                const notificationTriggerTime = timeUntilNotification - (1 * 60 * 1000);
-                console.log(`  Time until notification trigger (ms): ${notificationTriggerTime}`);
-
-                if (notificationTriggerTime > 0) { // Only schedule if time is in the future
+                if (notificationTriggerTime > 0) {
                     const timeoutId = setTimeout(() => {
-                        // Check permission again before showing notification, as it might have been revoked
                         if (Notification.permission === 'granted') {
                             new Notification(`Upcoming: ${activity.label}`, {
                                 body: `Your activity "${activity.label}" starts at ${formatTime(activity.startH, activity.startM)}!`,
-                                icon: 'https://placehold.co/64x64/000000/FFFFFF?text=🔔' // Simple bell icon
+                                icon: 'https://placehold.co/64x64/000000/FFFFFF?text=🔔'
                             });
-                            console.log(`Notification fired for: "${activity.label}"`);
-                        } else {
-                            console.warn(`Notification for "${activity.label}" not shown: permission revoked.`);
                         }
-                        // Remove from timeouts after it fires
                         delete notificationTimeouts[activity.id];
                     }, notificationTriggerTime);
                     notificationTimeouts[activity.id] = timeoutId;
-                    console.log(`  Successfully scheduled notification for "${activity.label}". Timeout ID: ${timeoutId}`);
-                } else {
-                    console.log(`  Notification not scheduled for "${activity.label}" because trigger time is not in the future.`);
                 }
             });
-            console.log("--- End Scheduling Notifications ---");
+            console.log("--- End Scheduling Routine Notifications ---");
         }
+
+        /**
+         * Schedules notifications for upcoming reminders.
+         * Clears previously scheduled reminder notifications to avoid duplicates.
+         * @param {Array<Object>} reminders - The list of reminder objects.
+         */
+        function scheduleReminderNotifications(reminders) {
+            console.log("--- Scheduling Reminder Notifications ---");
+            // Clear all existing reminder notification timeouts
+            for (const id in reminderNotificationTimeouts) {
+                clearTimeout(reminderNotificationTimeouts[id]);
+            }
+            reminderNotificationTimeouts = {};
+
+            if (Notification.permission !== 'granted') {
+                console.warn("Reminder notifications not scheduled: permission not granted.");
+                return;
+            }
+
+            const now = new Date();
+
+            reminders.forEach(reminder => {
+                const reminderDateTime = new Date(reminder.date);
+                reminderDateTime.setHours(reminder.hour, reminder.minute, 0, 0);
+
+                if (reminderDateTime < now) {
+                    console.log(`Reminder "${reminder.text}" is in the past, not scheduling.`);
+                    return; // Don't schedule reminders that are already in the past
+                }
+
+                const timeUntilNotification = reminderDateTime.getTime() - now.getTime();
+                const notificationTriggerTime = timeUntilNotification; // Trigger exactly at reminder time
+
+                if (notificationTriggerTime > 0) {
+                    const timeoutId = setTimeout(() => {
+                        if (Notification.permission === 'granted') {
+                            new Notification(`Reminder: ${reminder.text}`, {
+                                body: `It's time for: ${reminder.text} at ${formatTime(reminder.hour, reminder.minute)}!`,
+                                icon: 'https://placehold.co/64x64/000000/FFFFFF?text=⏰' // Clock icon
+                            });
+                        }
+                        delete reminderNotificationTimeouts[reminder.id];
+                        // Optionally remove reminder from list after it fires
+                        currentReminderData = currentReminderData.filter(r => r.id !== reminder.id);
+                        updateUIAndSave();
+                    }, notificationTriggerTime);
+                    reminderNotificationTimeouts[reminder.id] = timeoutId;
+                    console.log(`Scheduled reminder "${reminder.text}" for ${reminderDateTime.toLocaleString()}. Timeout ID: ${timeoutId}`);
+                }
+            });
+            console.log("--- End Scheduling Reminder Notifications ---");
+        }
+
 
         // --- Arc Info Tooltip Interaction ---
         function handleArcInteraction(event) {
@@ -1111,37 +1390,205 @@
             // Clear any pending hide actions to prevent flickering
             clearTimeout(tooltipTimeout);
 
+            // Get the bounding box of the SVG element
+            const svgRect = svgChart.getBoundingClientRect();
+
+            // Get the coordinates of the event relative to the viewport
+            const clientX = event.clientX;
+            const clientY = event.clientY;
+
+            // Calculate the position relative to the chart container
+            // This is crucial because the tooltip is absolutely positioned within the body,
+            // but we want it to appear relative to the chart's position on the page.
+            const tooltipX = clientX;
+            const tooltipY = clientY;
+
+
             if (event.type === 'mouseover') {
-                showArcInfo(activity, event);
+                showArcInfo(activity, tooltipX, tooltipY);
             } else if (event.type === 'mouseout') {
                 // Delay hiding slightly in case mouse briefly leaves and re-enters
                 tooltipTimeout = setTimeout(hideArcInfo, 100);
             } else if (event.type === 'click') {
-                showArcInfo(activity, event);
+                showArcInfo(activity, tooltipX, tooltipY);
                 // For clicks, hide after a longer duration
                 tooltipTimeout = setTimeout(hideArcInfo, 3000);
             }
         }
 
-        function showArcInfo(activity, event) {
+        function showArcInfo(activity, x, y) {
             infoLabel.textContent = activity.label;
             infoTime.textContent = `${formatTime(activity.startH, activity.startM)} - ${formatTime(activity.endH, activity.endM)}`;
 
-            // Position the tooltip relative to the chart container
-            const chartRect = svgChart.getBoundingClientRect();
-            // event.clientX/Y are relative to the viewport
-            // We want position relative to chart container for absolute positioning
-            const tooltipX = event.clientX - chartRect.left;
-            const tooltipY = event.clientY - chartRect.top;
-
-            arcInfoTooltip.style.left = `${tooltipX}px`;
-            arcInfoTooltip.style.top = `${tooltipY}px`;
+            // Set position using page coordinates directly for absolute positioning
+            // The transform: translate(-50%, -100%) in CSS will center it above the cursor
+            arcInfoTooltip.style.left = `${x}px`;
+            arcInfoTooltip.style.top = `${y}px`;
             arcInfoTooltip.classList.add('show');
         }
 
         function hideArcInfo() {
             arcInfoTooltip.classList.remove('show');
         }
+
+        // --- TAB BAR LOGIC ---
+        activityTabBtn.addEventListener('click', () => showTab('activity'));
+        reminderTabBtn.addEventListener('click', () => showTab('reminder'));
+
+        function showTab(tabName) {
+            // Deactivate all tab buttons and hide all content sections
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+
+            // Activate the selected tab button and show its content section
+            if (tabName === 'activity') {
+                activityTabBtn.classList.add('active');
+                activitySection.classList.add('active');
+            } else if (tabName === 'reminder') {
+                reminderTabBtn.classList.add('active');
+                reminderSection.classList.add('active');
+            }
+        }
+
+        // --- REMINDER LOGIC ---
+
+        /**
+         * Populates the reminder table with current reminder data.
+         */
+        function createReminderTable() {
+            reminderTableBody.innerHTML = '';
+
+            if (currentReminderData.length === 0) {
+                const noDataRow = document.createElement('tr');
+                noDataRow.innerHTML = `<td colspan="4" style="text-align: center; color: #8b949e;">No reminders yet.</td>`;
+                reminderTableBody.appendChild(noDataRow);
+                return;
+            }
+
+            currentReminderData.forEach(item => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-id', item.id);
+
+                const reminderTextCell = document.createElement('td');
+                reminderTextCell.textContent = item.text;
+                row.appendChild(reminderTextCell);
+
+                const reminderDateCell = document.createElement('td');
+                reminderDateCell.textContent = new Date(item.date).toLocaleDateString();
+                row.appendChild(reminderDateCell);
+
+                const reminderTimeCell = document.createElement('td');
+                reminderTimeCell.textContent = formatTime(item.hour, item.minute);
+                row.appendChild(reminderTimeCell);
+
+                const actionsCell = document.createElement('td');
+                actionsCell.classList.add('table-actions');
+
+                const editButton = document.createElement('button');
+                editButton.innerHTML = '<i class="fas fa-edit"></i>';
+                editButton.classList.add('secondary');
+                editButton.title = 'Edit Reminder';
+                editButton.onclick = () => editReminder(item);
+                actionsCell.appendChild(editButton);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                deleteButton.classList.add('danger');
+                deleteButton.title = 'Delete Reminder';
+                deleteButton.onclick = () => deleteReminder(item.id);
+                actionsCell.appendChild(deleteButton);
+
+                row.appendChild(actionsCell);
+                reminderTableBody.appendChild(row);
+            });
+        }
+
+        /**
+         * Resets the reminder form.
+         */
+        function resetReminderForm() {
+            reminderIdInput.value = '';
+            reminderTextInput.value = '';
+            reminderDateInput.valueAsDate = new Date(); // Set to today's date
+            reminderHourSelect.value = '0';
+            reminderMinuteSelect.value = '0';
+            saveReminderButton.textContent = 'Add Reminder';
+        }
+
+        /**
+         * Pre-fills the reminder form for editing.
+         * @param {Object} item - The reminder object to edit.
+         */
+        function editReminder(item) {
+            reminderIdInput.value = item.id;
+            reminderTextInput.value = item.text;
+            reminderDateInput.value = item.date; // Date input expects 'YYYY-MM-DD' string
+            reminderHourSelect.value = item.hour;
+            reminderMinuteSelect.value = item.minute;
+            saveReminderButton.textContent = 'Update Reminder';
+            // Note: The reminder form is directly visible, not a modal like activity form.
+        }
+
+        /**
+         * Deletes a reminder.
+         * @param {string} id - The ID of the reminder to delete.
+         */
+        function deleteReminder(id) {
+            if (!confirm('Are you sure you want to delete this reminder?')) {
+                return;
+            }
+            currentReminderData = currentReminderData.filter(item => item.id !== id);
+            updateUIAndSave();
+            showMessage("Reminder deleted successfully!");
+        }
+
+        // Event listener for reminder form submission
+        reminderForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const id = reminderIdInput.value || generateUniqueId();
+            const text = reminderTextInput.value.trim();
+            const date = reminderDateInput.value; // YYYY-MM-DD string
+            const hour = parseInt(reminderHourSelect.value);
+            const minute = parseInt(reminderMinuteSelect.value);
+
+            if (!text || !date) {
+                showMessage("Reminder text and date cannot be empty.");
+                return;
+            }
+
+            const newReminder = {
+                id,
+                text,
+                date,
+                hour,
+                minute
+            };
+
+            const existingIndex = currentReminderData.findIndex(item => item.id === id);
+
+            if (existingIndex > -1) {
+                currentReminderData[existingIndex] = newReminder;
+                showMessage("Reminder updated successfully!");
+            } else {
+                currentReminderData.push(newReminder);
+                showMessage("Reminder added successfully!");
+            }
+
+            // Sort reminders by date and time
+            currentReminderData.sort((a, b) => {
+                const dateTimeA = new Date(`${a.date}T${a.hour.toString().padStart(2, '0')}:${a.minute.toString().padStart(2, '0')}:00`);
+                const dateTimeB = new Date(`${b.date}T${b.hour.toString().padStart(2, '0')}:${b.minute.toString().padStart(2, '0')}:00`);
+                return dateTimeA.getTime() - dateTimeB.getTime();
+            });
+
+            updateUIAndSave();
+            resetReminderForm();
+        });
+
+        // Event listener for reminder form cancel button
+        cancelReminderButton.addEventListener('click', resetReminderForm);
+
 
         // --- PWA Service Worker Registration ---
         if ('serviceWorker' in navigator) {
@@ -1159,9 +1606,12 @@
         // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', function () {
             populateTimeSelects();
-            currentScheduleData = loadScheduleFromLocalStorage(); // Load data on startup
+            updateDateHeader(); // Set initial date/day
+            currentScheduleData = loadScheduleFromLocalStorage(); // Load routine data
+            currentReminderData = loadRemindersFromLocalStorage(); // Load reminder data
             updateUIAndSave(); // Draw initial chart/table and save (in case it was empty)
             checkNotificationPermission(); // Check notification permission status
+            showTab('activity'); // Show activity tab by default
         });
     </script>
 
